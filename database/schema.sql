@@ -15,14 +15,26 @@ CREATE TYPE recommendation_priority AS ENUM (
 );
 
 CREATE TYPE recommendation_category AS ENUM (
-    'Architecture',
     'Security',
     'Performance',
-    'Database',
-    'Documentation',
-    'Testing',
+    'Code Quality',
     'Dependency',
-    'Code Quality'
+    'Best Practice',
+    'Maintainability',
+    'Scalability',
+    'Documentation'
+);
+
+CREATE TYPE recommendation_component AS ENUM (
+    'Frontend',
+    'Backend',
+    'API',
+    'Database',
+    'Authentication',
+    'Architecture',
+    'Configuration',
+    'Deployment',
+    'CI/CD'
 );
 
 -- =====================================================
@@ -125,7 +137,7 @@ CREATE TABLE architectures (
 
     analysis_id UUID UNIQUE NOT NULL,
 
-    architecture_data TEXT NOT NULL,
+    architecture_data JSONB NOT NULL,
 
     layers TEXT,
 
@@ -151,8 +163,6 @@ CREATE TABLE documentations (
     analysis_id UUID UNIQUE NOT NULL,
 
     content TEXT NOT NULL,
-
-    format VARCHAR(50) DEFAULT 'Markdown',
 
     generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
@@ -202,19 +212,19 @@ CREATE TABLE recommendations (
 
     description TEXT NOT NULL,
 
-    priority recommendation_priority,
+    component recommendation_component NOT NULL,
+
+    priority recommendation_priority NOT NULL,
 
     category recommendation_category,
 
     CONSTRAINT fk_recommendation_analysis
-
         FOREIGN KEY (analysis_id)
-
         REFERENCES analyses(id)
-
         ON DELETE CASCADE
 
 );
+
 -- =====================================================
 -- INDEXES
 -- =====================================================
