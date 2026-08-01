@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
+import type { ReactNode } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Landing } from "@/pages/Landing";
 import { Login } from "@/pages/Login";
@@ -12,13 +13,25 @@ import { ArchitectureTab } from "@/features/analysis/tabs/ArchitectureTab";
 import { RecommendationsTab } from "@/features/analysis/tabs/RecommendationsTab";
 import { RoadmapTab } from "@/features/analysis/tabs/RoadmapTab";
 
+const TOKEN_STORAGE_KEY = "legacylens_access_token";
+
+function RequireAuth({ children }: { children: ReactNode }) {
+  const token = typeof window !== "undefined" ? window.localStorage.getItem(TOKEN_STORAGE_KEY) : null;
+
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
+}
+
 export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
 
-      <Route path="/app" element={<AppShell />}>
+      <Route path="/app" element={<RequireAuth><AppShell /></RequireAuth>}>
         <Route index element={<Dashboard />} />
         <Route path="projects" element={<Projects />} />
         <Route path="settings" element={<Settings />} />

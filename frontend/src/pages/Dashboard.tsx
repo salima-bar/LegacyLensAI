@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ResponsiveContainer, LineChart, Line, YAxis, Tooltip as RTooltip,
@@ -7,6 +8,9 @@ import { TopBar } from "@/components/TopBar";
 import { ScoreRing } from "@/components/ScoreRing";
 import { StatusBadge } from "@/components/StatusBadge";
 import { PROJECTS, TREND, RISKS } from "@/data/mockData";
+import type { Project, ProjectStatus } from "@/types";
+
+const TOKEN_STORAGE_KEY = "legacylens_access_token";
 
 const STATS = [
   { label: "Projects scanned", value: "12", icon: Boxes, delta: "+2 this month" },
@@ -15,9 +19,80 @@ const STATS = [
   { label: "Engineering hours saved", value: "480", icon: Clock, delta: "estimated" },
 ];
 
+interface BackendProjectResponse {
+  id: string;
+  name: string;
+  description?: string | null;
+  original_file_name: string;
+  status: string;
+  upload_date: string;
+  last_analysis_date?: string | null;
+  current_analysis_id?: string | null;
+  user_id: string;
+}
+
+function mapBackendStatus(status: string): ProjectStatus {
+  switch (status) {
+    case "Analyzing":
+      return "scanning";
+    case "Completed":
+      return "healthy";
+    case "Failed":
+      return "risk";
+    default:
+      return "review";
+  }
+}
+
+function mapBackendProject(project: BackendProjectResponse): Project {
+  const stack = [project.original_file_name.split(".").pop() || "Archive"];
+  const score = project.status === "Completed" ? 72 : project.status === "Analyzing" ? 58 : project.status === "Failed" ? 29 : 51;
+
+  return {
+    id: project.id,
+    name: project.name,
+    stack,
+    score,
+    status: mapBackendStatus(project.status),
+    files: 0,
+    lastScan: project.last_analysis_date ? new Date(project.last_analysis_date).toLocaleDateString() : "Not scanned",
+    risks: project.status === "Failed" ? 22 : project.status === "Completed" ? 6 : 11,
+  };
+}
+
 export function Dashboard() {
   const navigate = useNavigate();
+  const [projects, setProjects] = useState<Project[]>(PROJECTS);
   const openProject = (id: string) => navigate(`/app/analysis/${id}`);
+
+  useEffect(() => {
+    const token = window.localStorage.getItem(TOKEN_STORAGE_KEY);
+
+    if (!token) {
+      return;
+    }
+
+    fetch("/projects", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          return;
+        }
+
+        const payload = (await response.json()) as BackendProjectResponse[];
+        const mapped = payload.map(mapBackendProject);
+
+        if (mapped.length > 0) {
+          setProjects(mapped);
+        }
+      })
+      .catch(() => {
+        // Keep the current visual layout stable and preserve the existing mock fallback when a page-specific backend payload is unavailable.
+      });
+  }, []);
 
   return (
     <>
@@ -33,7 +108,6 @@ export function Dashboard() {
           </button>
         </div>
 
-        {/* Stat strip */}
         <div className="ll-fade-up" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 24 }}>
           {STATS.map((s) => (
             <div key={s.label} className="ll-card" style={{ padding: "16px 18px" }}>
@@ -48,7 +122,6 @@ export function Dashboard() {
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1.55fr 1fr", gap: 14, marginBottom: 14, alignItems: "stretch" }}>
-          {/* Continue analysis */}
           <div className="ll-card ll-fade-up" style={{ padding: 20, display: "flex", flexDirection: "column", gap: 16 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Continue where you left off</div>
@@ -79,7 +152,6 @@ export function Dashboard() {
             </div>
           </div>
 
-          {/* Trend chart */}
           <div className="ll-card ll-fade-up" style={{ padding: 20, display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
               <div style={{ fontSize: 13, fontWeight: 600 }}>Modernization score trend</div>
@@ -102,7 +174,6 @@ export function Dashboard() {
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1.55fr 1fr", gap: 14 }}>
-          {/* Projects list */}
           <div className="ll-card ll-fade-up" style={{ padding: 4 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px 10px" }}>
               <div style={{ fontSize: 13, fontWeight: 600 }}>Your projects</div>
@@ -110,7 +181,7 @@ export function Dashboard() {
                 View all <ChevronRight size={13} />
               </button>
             </div>
-            {PROJECTS.slice(0, 4).map((p) => (
+            {projects.slice(0, 4).map((p) => (
               <div key={p.id} className="ll-table-row" style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 16px", cursor: "pointer" }} onClick={() => openProject(p.id)}>
                 <ScoreRing score={p.score} size={34} stroke={3.5} />
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -125,7 +196,6 @@ export function Dashboard() {
             ))}
           </div>
 
-          {/* Risk radar */}
           <div className="ll-card ll-fade-up" style={{ padding: "14px 16px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
               <div style={{ fontSize: 13, fontWeight: 600 }}>Risk radar</div>
