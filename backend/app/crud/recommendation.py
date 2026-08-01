@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-from sqlalchemy import select
-from sqlalchemy.orm import Session
-
 from app.models.analysis import Analysis
 from app.models.enums import (
     RecommendationCategory,
@@ -10,6 +7,8 @@ from app.models.enums import (
     RecommendationPriority,
 )
 from app.models.recommendation import Recommendation
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 
 def create_recommendation(

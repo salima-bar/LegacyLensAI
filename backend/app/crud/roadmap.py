@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from sqlalchemy import select
-from sqlalchemy.orm import Session
-
 from app.models.analysis import Analysis
 from app.models.roadmap import Roadmap
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 
 def create_roadmap(

@@ -4,32 +4,29 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
+from app.database.base import Base
 from sqlalchemy import (
+    DateTime,
+    ForeignKey,
     Integer,
     String,
     Text,
-    DateTime,
-    ForeignKey,
     UniqueConstraint,
     text,
 )
-
 from sqlalchemy.dialects.postgresql import UUID
-
 from sqlalchemy.orm import (
     Mapped,
     mapped_column,
     relationship,
 )
 
-from app.database.base import Base
-
 if TYPE_CHECKING:
-    from app.models.project import Project
-    from app.models.documentation import Documentation
     from app.models.architecture import Architecture
-    from app.models.roadmap import Roadmap
+    from app.models.documentation import Documentation
+    from app.models.project import Project
     from app.models.recommendation import Recommendation
+    from app.models.roadmap import Roadmap
     
 
 class Analysis(Base):
@@ -89,34 +86,34 @@ class Analysis(Base):
     # Relationships
     
     # Parent project
-    project: Mapped["Project"] = relationship(
+    project: Mapped[Project] = relationship(
         back_populates="analyses",
         foreign_keys=[project_id],
     )
 
     # One-to-one
-    architecture: Mapped["Architecture | None"] = relationship(
+    architecture: Mapped[Architecture | None] = relationship(
         back_populates="analysis",
         cascade="all, delete-orphan",
         uselist=False,
     )
 
     # One-to-one
-    documentation: Mapped["Documentation | None"] = relationship(
+    documentation: Mapped[Documentation | None] = relationship(
         back_populates="analysis",
         cascade="all, delete-orphan",
         uselist=False,
     )
     
     # One-to-one
-    roadmap: Mapped["Roadmap | None"] = relationship(
+    roadmap: Mapped[Roadmap | None] = relationship(
         back_populates="analysis",
         cascade="all, delete-orphan",
         uselist=False,
     )
 
     # One-to-many (list)
-    recommendations: Mapped[list["Recommendation"]] = relationship(
+    recommendations: Mapped[list[Recommendation]] = relationship(
         back_populates="analysis",
         cascade="all, delete-orphan",
     )

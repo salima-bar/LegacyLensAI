@@ -4,11 +4,10 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import String, Text, DateTime, text
+from app.database.base import Base
+from sqlalchemy import DateTime, String, Text, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from app.database.base import Base
 
 if TYPE_CHECKING:
     from app.models.project import Project
@@ -46,7 +45,7 @@ class User(Base):
     )
 
     # Relationships
-    projects: Mapped[list["Project"]] = relationship(
+    projects: Mapped[list[Project]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
     )

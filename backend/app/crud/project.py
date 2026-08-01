@@ -2,13 +2,12 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from sqlalchemy import select
-from sqlalchemy.orm import Session
-
 from app.models.analysis import Analysis
 from app.models.enums import ProjectStatus
 from app.models.project import Project
 from app.schemas.project import ProjectCreate, ProjectUpdate
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 
 def create_project(

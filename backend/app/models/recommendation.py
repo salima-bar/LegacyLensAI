@@ -3,16 +3,15 @@ from __future__ import annotations
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Enum, ForeignKey, String, Text, text
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-
 from app.database.base import Base
 from app.models.enums import (
     RecommendationCategory,
-    RecommendationPriority,
     RecommendationComponent,
+    RecommendationPriority,
 )
+from sqlalchemy import Enum, ForeignKey, String, Text, text
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 if TYPE_CHECKING:
     from app.models.analysis import Analysis
@@ -65,6 +64,6 @@ class Recommendation(Base):
 
     # Relationship
 
-    analysis: Mapped["Analysis"] = relationship(
+    analysis: Mapped[Analysis] = relationship(
         back_populates="recommendations",
     )

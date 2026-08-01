@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from sqlalchemy import desc, select
-from sqlalchemy.orm import Session
-
 from app.models.analysis import Analysis
 from app.models.project import Project
+from app.models.user import User
+from sqlalchemy import desc, select
+from sqlalchemy.orm import Session
 
 
 def create_analysis(
@@ -73,6 +73,25 @@ def get_latest_analysis(
 
     return db.execute(stmt).scalar_one_or_none()
 
+def get_analysis_by_id_and_user(
+    db: Session,
+    analysis_id: UUID,
+    user: User,
+) -> Analysis | None:
+    """
+    Return an analysis only if it belongs to the user.
+    """
+
+    stmt = (
+        select(Analysis)
+        .join(Project)
+        .where(
+            Analysis.id == analysis_id,
+            Project.user_id == user.id,
+        )
+    )
+
+    return db.execute(stmt).scalar_one_or_none()
 
 def delete_analysis(
     db: Session,

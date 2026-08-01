@@ -3,14 +3,13 @@ from __future__ import annotations
 import uuid
 from typing import TYPE_CHECKING
 
+from app.database.base import Base
 from sqlalchemy import ForeignKey, Text, text
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database.base import Base
-
 if TYPE_CHECKING:
-    from app.models.analysis import Analysis 
+    from app.models.analysis import Analysis
 
 class Architecture(Base):
     __tablename__ = "architectures"
@@ -43,6 +42,6 @@ class Architecture(Base):
 
     # Relationship
 
-    analysis: Mapped["Analysis"] = relationship(
+    analysis: Mapped[Analysis] = relationship(
         back_populates="architecture",
     )

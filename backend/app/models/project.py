@@ -4,12 +4,14 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
+from app.database.base import Base
+from app.models.enums import ProjectStatus
 from sqlalchemy import (
-    String,
-    Text,
     DateTime,
     Enum,
     ForeignKey,
+    String,
+    Text,
     text,
 )
 from sqlalchemy.dialects.postgresql import UUID
@@ -19,12 +21,9 @@ from sqlalchemy.orm import (
     relationship,
 )
 
-from app.database.base import Base
-from app.models.enums import ProjectStatus
-
 if TYPE_CHECKING:
-    from app.models.user import User
     from app.models.analysis import Analysis
+    from app.models.user import User
 
 class Project(Base):
     __tablename__ = "projects"
@@ -79,23 +78,23 @@ class Project(Base):
 
     current_analysis_id: Mapped[uuid.UUID | None] = mapped_column( 
         UUID(as_uuid=True), 
-        ForeignKey("analyses.id", ondelete="SET NULL"), 
+        ForeignKey("analysis_id", ondelete="SET NULL"), 
     )
 
     # Relationships
 
-    user: Mapped["User"] = relationship(
+    user: Mapped[User] = relationship(
         back_populates="projects",
     )
 
-    analyses: Mapped[list["Analysis"]] = relationship(
+    analyses: Mapped[list[Analysis]] = relationship(
         back_populates="project",
         cascade="all, delete-orphan",
         foreign_keys="Analysis.project_id",
     )
 
     # Latest analysis for this project
-    current_analysis: Mapped["Analysis | None"] = relationship(
+    current_analysis: Mapped[Analysis | None] = relationship(
         foreign_keys=[current_analysis_id],
         uselist=False,
     )
