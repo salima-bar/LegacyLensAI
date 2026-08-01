@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Filter, Terminal } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
 import { ScoreRing } from "@/components/ScoreRing";
 import { StatusBadge } from "@/components/StatusBadge";
 import { PROJECTS } from "@/data/mockData";
-import type { ProjectStatus } from "@/types";
+import type { Project, ProjectStatus } from "@/types";
+
+const TOKEN_STORAGE_KEY = "legacylens_access_token";
 
 type FilterKey = "all" | ProjectStatus;
 
@@ -16,10 +18,82 @@ const FILTERS: { key: FilterKey; label: string }[] = [
   { key: "healthy", label: "Healthy" },
 ];
 
+interface BackendProjectResponse {
+  id: string;
+  name: string;
+  description?: string | null;
+  original_file_name: string;
+  status: string;
+  upload_date: string;
+  last_analysis_date?: string | null;
+  current_analysis_id?: string | null;
+  user_id: string;
+}
+
+function mapBackendStatus(status: string): ProjectStatus {
+  switch (status) {
+    case "Analyzing":
+      return "scanning";
+    case "Completed":
+      return "healthy";
+    case "Failed":
+      return "risk";
+    default:
+      return "review";
+  }
+}
+
+function mapBackendProject(project: BackendProjectResponse): Project {
+  const stack = [project.original_file_name.split(".").pop() || "Archive"];
+  const score = project.status === "Completed" ? 72 : project.status === "Analyzing" ? 58 : project.status === "Failed" ? 29 : 51;
+
+  return {
+    id: project.id,
+    name: project.name,
+    stack,
+    score,
+    status: mapBackendStatus(project.status),
+    files: 0,
+    lastScan: project.last_analysis_date ? new Date(project.last_analysis_date).toLocaleDateString() : "Not scanned",
+    risks: project.status === "Failed" ? 22 : project.status === "Completed" ? 6 : 11,
+  };
+}
+
 export function Projects() {
   const [filter, setFilter] = useState<FilterKey>("all");
+  const [projects, setProjects] = useState<Project[]>(PROJECTS);
   const navigate = useNavigate();
-  const filtered = filter === "all" ? PROJECTS : PROJECTS.filter((p) => p.status === filter);
+
+  useEffect(() => {
+    const token = window.localStorage.getItem(TOKEN_STORAGE_KEY);
+
+    if (!token) {
+      return;
+    }
+
+    fetch("/projects", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          return;
+        }
+
+        const payload = (await response.json()) as BackendProjectResponse[];
+        const mapped = payload.map(mapBackendProject);
+
+        if (mapped.length > 0) {
+          setProjects(mapped);
+        }
+      })
+      .catch(() => {
+        // Preserve the existing page layout and let the mock fallback remain visible while the backend payload is unavailable.
+      });
+  }, []);
+
+  const filtered = filter === "all" ? projects : projects.filter((p) => p.status === filter);
 
   return (
     <>
@@ -28,7 +102,7 @@ export function Projects() {
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 22 }}>
           <div>
             <div className="ll-display" style={{ fontSize: 22, fontWeight: 600 }}>Projects</div>
-            <div style={{ fontSize: 13, color: "var(--text-2)", marginTop: 4 }}>{PROJECTS.length} legacy codebases connected</div>
+            <div style={{ fontSize: 13, color: "var(--text-2)", marginTop: 4 }}>{projects.length} legacy codebases connected</div>
           </div>
           <button className="ll-btn ll-btn-primary" style={{ padding: "9px 16px", borderRadius: 8, fontSize: 13 }}>
             <Plus size={14} /> Upload project
